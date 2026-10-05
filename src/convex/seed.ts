@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import { api, internal } from "./_generated/api";
-import type { Doc, Id } from "./_generated/dataModel";
+import type { Id } from "./_generated/dataModel";
 import { action, internalMutation, query } from "./_generated/server";
 import { hashPassword } from "./auth/password";
 import { DAY_MS, isoDate, utcMidnight } from "./lib";
@@ -61,7 +61,19 @@ export const ensureSeeded = action({
           hash: await hashPassword(user.password),
         });
       }
-      await ctx.runMutation(internal.seed.insertCore, { now, hashes });
+
+      // File storage writes are only available in actions, so the handout
+      // PDFs are stored here and handed to the mutation as storage keys.
+      const files: { index: number; objectKey: string; sizeBytes: number }[] = [];
+      for (const [index, note] of NOTES.entries()) {
+        const pdf = buildHandoutPdf(note.title, note.lines, 16_000 + index * 4_300);
+        const objectKey = await ctx.storage.store(
+          new Blob([pdf], { type: "application/pdf" }),
+        );
+        files.push({ index, objectKey, sizeBytes: pdf.byteLength });
+      }
+
+      await ctx.runMutation(internal.seed.insertCore, { now, hashes, files });
     }
 
     if (!state.attendanceSeeded) {
@@ -79,6 +91,13 @@ export const insertCore = internalMutation({
   args: {
     now: v.number(),
     hashes: v.array(v.object({ portalId: v.string(), hash: v.string() })),
+    files: v.array(
+      v.object({
+        index: v.number(),
+        objectKey: v.string(),
+        sizeBytes: v.number(),
+      }),
+    ),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db
@@ -177,10 +196,8 @@ export const insertCore = internalMutation({
       const subjectId = subjectIds.get(note.subjectCode);
       const teacherId = subjectTeacher.get(note.subjectCode);
       if (!subjectId || !teacherId) throw new Error(`Bad note subject ${note.subjectCode}`);
-      const pdf = buildHandoutPdf(note.title, note.lines, 16_000 + index * 4_300);
-      const objectKey = await ctx.storage.store(
-        new Blob([pdf], { type: "application/pdf" }),
-      );
+      const file = args.files.find((f) => f.index === index);
+      if (!file) throw new Error(`Missing stored file for ${note.fileName}`);
       await ctx.db.insert("notes", {
         title: note.title,
         description: note.description,
@@ -189,8 +206,8 @@ export const insertCore = internalMutation({
         teacherId,
         fileName: note.fileName,
         fileType: "pdf",
-        objectKey,
-        sizeBytes: pdf.byteLength,
+        objectKey: file.objectKey,
+        sizeBytes: file.sizeBytes,
         uploadedAt: utcMidnight(now) - note.uploadedDaysAgo * DAY_MS + 11 * 3600_000,
       });
     }

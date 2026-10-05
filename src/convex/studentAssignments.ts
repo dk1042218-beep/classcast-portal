@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, type QueryCtx } from "./_generated/server";
 import { DAY_MS, requireStudent } from "./lib";
 
 const GRACE_MS = 2 * DAY_MS;
@@ -19,12 +19,12 @@ function stateOf(
 
 /** How many students are on the class register. */
 async function classStrength(
-  ctx: { db: { query: (table: "users") => any } },
+  ctx: QueryCtx,
   className: string,
 ): Promise<number> {
   const users = await ctx.db.query("users").collect();
   return users.filter(
-    (u: Doc<"users">) => u.role === "student" && u.className === className,
+    (u) => u.role === "student" && u.className === className,
   ).length;
 }
 

@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 import { query } from "./_generated/server";
 import { requireStudent } from "./lib";
 
@@ -75,7 +76,7 @@ export const notesList = query({
         subjectCode: subject?.code ?? "",
         subject: subject?.name ?? "",
         teacher: teacherName.get(note.subjectId) ?? "Not allotted",
-        fileUrl: await ctx.storage.getUrl(note.objectKey),
+        fileUrl: await ctx.storage.getUrl(note.objectKey as Id<"_storage">),
       });
     }
 

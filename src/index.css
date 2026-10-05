@@ -42,40 +42,41 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-/* CHANGE VALUES FOR THEME */
+/* CHANGE VALUES FOR THEME — ClassCast: warm cream paper, ink-blue type,
+   burgundy + faded teal accents, hairline borders, no gradients or glow. */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --radius: 0.125rem;
+  --background: #f3eee1;
+  --foreground: #1b2a44;
+  --card: #fbf8f0;
+  --card-foreground: #1b2a44;
+  --popover: #fbf8f0;
+  --popover-foreground: #1b2a44;
+  --primary: #6f2333;
+  --primary-foreground: #f7f3e8;
+  --secondary: #e9e2d0;
+  --secondary-foreground: #1b2a44;
+  --muted: #ece5d5;
+  --muted-foreground: #5b6579;
+  --accent: #2e6b66;
+  --accent-foreground: #f7f3e8;
+  --destructive: #9b2c2c;
+  --border: #d9cfba;
+  --input: #cec3aa;
+  --ring: #6f2333;
+  --chart-1: #6f2333;
+  --chart-2: #2e6b66;
+  --chart-3: #1b2a44;
+  --chart-4: #a9762f;
+  --chart-5: #7d8a6a;
+  --sidebar: #ede6d6;
+  --sidebar-foreground: #1b2a44;
+  --sidebar-primary: #6f2333;
+  --sidebar-primary-foreground: #f7f3e8;
+  --sidebar-accent: #e2dac6;
+  --sidebar-accent-foreground: #1b2a44;
+  --sidebar-border: #d5cab3;
+  --sidebar-ring: #6f2333;
 }
 
 .dark {
@@ -123,4 +124,75 @@
   [role="button"]:not([disabled]) {
     cursor: pointer;
   }
+}
+
+/* ------------------------------------------------------------------
+   ClassCast editorial layer: fonts, paper details, document utilities
+   ------------------------------------------------------------------ */
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    background-color: var(--background);
+  }
+  ::selection {
+    background: #6f2333;
+    color: #f7f3e8;
+  }
+}
+
+/* Serif display face for editorial headings */
+.font-editorial {
+  font-family: var(--font-serif);
+}
+/* Monospace face for course codes, IDs, times */
+.font-code {
+  font-family: var(--font-mono);
+}
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+/* Small uppercase label used across panels and tables */
+.label-caps {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+/* Ruled-paper surface for document-like blocks */
+.ruled {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 1.74rem,
+    color-mix(in srgb, var(--border) 75%, transparent) 1.74rem,
+    color-mix(in srgb, var(--border) 75%, transparent) calc(1.74rem + 1px)
+  );
+  background-position: 0 0.35rem;
+}
+/* Rubber-stamp status mark */
+.stamp {
+  display: inline-block;
+  border: 2px solid var(--primary);
+  color: var(--primary);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  transform: rotate(-3deg);
+  opacity: 0.9;
+}
+/* Double rule under mastheads */
+.rule-double {
+  border-bottom: 3px double var(--border);
 }

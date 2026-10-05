@@ -1,5 +1,6 @@
 import { ConvexCredentials } from "@convex-dev/auth/providers/ConvexCredentials";
 import { internal } from "../_generated/api";
+import type { Id } from "../_generated/dataModel";
 
 /**
  * ClassCast credential sign-in.
@@ -23,7 +24,7 @@ function toHex(bytes: Uint8Array): string {
   return out;
 }
 
-function fromHex(hex: string): Uint8Array {
+function fromHex(hex: string): Uint8Array<ArrayBuffer> {
   const bytes = new Uint8Array(hex.length / 2);
   for (let i = 0; i < bytes.length; i++) {
     bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
@@ -33,7 +34,7 @@ function fromHex(hex: string): Uint8Array {
 
 async function derive(
   password: string,
-  salt: Uint8Array,
+  salt: Uint8Array<ArrayBuffer>,
   iterations: number,
 ): Promise<Uint8Array> {
   const key = await crypto.subtle.importKey(
@@ -81,9 +82,12 @@ export async function verifyPassword(
  * `signIn("password", { identifier, password })` where identifier is a portal
  * ID (ST-101) or a college email address.
  */
-export const classcastPassword = ConvexCredentials({
+type CredentialsProvider = ReturnType<typeof ConvexCredentials>;
+type AuthorizeResult = { userId: Id<"users"> } | null;
+
+export const classcastPassword: CredentialsProvider = ConvexCredentials({
   id: "password",
-  authorize: async (params, ctx) => {
+  authorize: async (params, ctx): Promise<AuthorizeResult> => {
     const identifier = String(params.identifier ?? "")
       .trim()
       .toLowerCase();
@@ -91,14 +95,19 @@ export const classcastPassword = ConvexCredentials({
     if (identifier.length < 3 || identifier.length > 120) return null;
     if (password.length < 8 || password.length > 200) return null;
 
-    const user = await ctx.runQuery(internal.authUsers.byIdentifier, {
+    const user: {
+      userId: Id<"users">;
+      role: string | null;
+      status: string;
+    } | null = await ctx.runQuery(internal.authUsers.byIdentifier, {
       identifier,
     });
     if (user === null) return null;
 
-    const hash = await ctx.runQuery(internal.authUsers.credentialHash, {
-      userId: user.userId,
-    });
+    const hash: string | null = await ctx.runQuery(
+      internal.authUsers.credentialHash,
+      { userId: user.userId },
+    );
     if (hash === null) return null;
 
     const valid = await verifyPassword(password, hash);

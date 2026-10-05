@@ -197,6 +197,24 @@ Avoid hardcoding in colors unless necessary for a use case, and properly impleme
 
 When styling, ensure buttons and clickable items have pointer-click on them (don't by default).
 
+# ClassCast v1 — Demo access
+
+Version 1 ships the student desk. On first load the app bootstraps its demo
+college data (idempotent, guarded by `seedState` flags in `src/convex/seed.ts`).
+
+Demo student accounts (seeded; passwords stored only as PBKDF2 hashes in the
+`credentials` table, never in frontend code):
+
+| Portal ID | Student | Class |
+| --- | --- | --- |
+| ST-101 | Ayaan Khan (roll 101) — showcase account | TYBSc CS |
+| ST-102 … ST-106 | Sara, Rehan, Dilshad, Meera, Vikram | TYBSc CS |
+
+Password for all seeded students: `Classcast@2026`
+
+Sign in at `/auth` with the portal ID (or the college email). Teacher and
+admin records exist for data ownership but cannot sign in until version 2.
+
 Always follow a set theme style and ensure it is tuned to the user's liking.
 
 ## Toasts

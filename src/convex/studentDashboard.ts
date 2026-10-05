@@ -1,7 +1,17 @@
 import { v } from "convex/values";
-import type { Doc } from "./_generated/dataModel";
+import type { Doc, Id } from "./_generated/dataModel";
 import { query } from "./_generated/server";
 import { DAY_MS, isDayKey, isIsoDate, requireStudent } from "./lib";
+
+interface SubjectEntry {
+  id: Id<"subjects">;
+  code: string;
+  name: string;
+  room: string;
+  credits: number;
+  teacher: string;
+  teacherId: Id<"users">;
+}
 
 const GRACE_MS = 2 * DAY_MS;
 
@@ -46,8 +56,8 @@ export const overview = query({
           .collect()
       : [];
 
-    const subjects = [];
-    const subjectById = new Map<string, (typeof subjects)[number]>();
+    const subjects: SubjectEntry[] = [];
+    const subjectById = new Map<string, SubjectEntry>();
     for (const subject of subjectDocs) {
       const teacher = await ctx.db.get(subject.teacherId);
       const entry = {
@@ -213,7 +223,7 @@ export const overview = query({
         uploadedAt: note.uploadedAt,
         subjectCode: subject?.code ?? "",
         subject: subject?.name ?? "",
-        fileUrl: await ctx.storage.getUrl(note.objectKey),
+        fileUrl: await ctx.storage.getUrl(note.objectKey as Id<"_storage">),
       });
     }
 

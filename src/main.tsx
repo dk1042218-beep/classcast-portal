@@ -14,6 +14,15 @@ const Landing = lazy(() => import("./pages/Landing.tsx"));
 const AuthPage = lazy(() => import("./pages/Auth.tsx"));
 const Dashboard = lazy(() => import("./pages/Dashboard.tsx"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
+const PortalShell = lazy(() => import("./components/portal/PortalShell.tsx"));
+const Timetable = lazy(() => import("./pages/Timetable.tsx"));
+const Attendance = lazy(() => import("./pages/Attendance.tsx"));
+const Notes = lazy(() => import("./pages/Notes.tsx"));
+const Assignments = lazy(() => import("./pages/Assignments.tsx"));
+const Notices = lazy(() => import("./pages/Notices.tsx"));
+const Notifications = lazy(() => import("./pages/Notifications.tsx"));
+const Profile = lazy(() => import("./pages/Profile.tsx"));
+const SearchPage = lazy(() => import("./pages/Search.tsx"));
 
 // Simple loading fallback for route transitions
 function RouteLoading() {
@@ -119,19 +128,32 @@ createRoot(document.getElementById("root")!).render(
           <RouteSyncer />
           <Suspense fallback={<RouteLoading />}>
             <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route
+              <Route path="/" element={<Landing />} />              <Route
                 path="/auth"
-                element={<AuthPage redirectAfterAuth="/dashboard" />}
-              />
-              <Route
-                path="/dashboard"
                 element={
-                  <RequireAuth>
-                    <Dashboard />
-                  </RequireAuth>
+                  <AuthPage redirectAfterAuth="/dashboard" />
                 }
               />
+              <Route
+                element={
+                  <RequireAuth
+                    title="Sign in to open your student desk"
+                    description="ClassCast keeps your timetable, attendance, notes, assignments and notices behind your portal ID."
+                  >
+                    <PortalShell />
+                  </RequireAuth>
+                }
+              >
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/timetable" element={<Timetable />} />
+                <Route path="/attendance" element={<Attendance />} />
+                <Route path="/notes" element={<Notes />} />
+                <Route path="/assignments" element={<Assignments />} />
+                <Route path="/notices" element={<Notices />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/search" element={<SearchPage />} />
+              </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>

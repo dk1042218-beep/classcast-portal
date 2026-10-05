@@ -15,6 +15,13 @@ function escape(text: string): string {
   return text.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
 }
 
+/** ASCII-only bytes so the PDF stays byte-length identical to its text. */
+function asciiBytes(text: string): Uint8Array<ArrayBuffer> {
+  const out = new Uint8Array(text.length);
+  for (let i = 0; i < text.length; i++) out[i] = text.charCodeAt(i) & 0xff;
+  return out;
+}
+
 function wrap(text: string, width: number): string[] {
   const words = text.split(" ");
   const lines: string[] = [];
@@ -35,7 +42,7 @@ export function buildHandoutPdf(
   title: string,
   lines: string[],
   minBytes = 16_000,
-): Uint8Array {
+): Uint8Array<ArrayBuffer> {
   const ops: string[] = [];
   ops.push(`BT /F2 15 Tf 56 758 Td (${escape(sanitize(title))}) Tj ET`);
   ops.push(`BT /F1 9 Tf 56 740 Td (${escape(HEADER)}) Tj ET`);
@@ -87,12 +94,11 @@ export function buildHandoutPdf(
   for (const off of offsets) pdf += `${String(off).padStart(10, "0")} 00000 n \n`;
   pdf += `trailer\n<< /Size ${size} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF\n`;
 
-  const encoded = new TextEncoder().encode(pdf);
+  const encoded = asciiBytes(pdf);
   if (encoded.length < minBytes) {
-    const tail = new Uint8Array(minBytes - encoded.length).fill(0x20);
-    const joined = new Uint8Array(encoded.length + tail.length);
+    const joined = new Uint8Array(minBytes);
     joined.set(encoded, 0);
-    joined.set(tail, encoded.length);
+    joined.fill(0x20, encoded.length);
     return joined;
   }
   return encoded;
