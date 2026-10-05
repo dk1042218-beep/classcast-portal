@@ -57,10 +57,13 @@ export default function Timetable() {
           <table className="w-full min-w-[720px] text-sm">
             <thead>
               <tr>
-                <th className={`${TH} w-28`}>Period</th>
+                <th scope="col" className={`${TH} w-28`}>
+                  Period
+                </th>
                 {DAYS.map((d) => (
                   <th
                     key={d.key}
+                    scope="col"
                     className={`${TH} ${d.key === day ? "bg-secondary text-foreground" : ""}`}
                   >
                     {d.label}
@@ -126,11 +129,11 @@ export default function Timetable() {
               <table className="w-full min-w-[560px] text-sm">
                 <thead>
                   <tr>
-                    <th className={TH}>Code</th>
-                    <th className={TH}>Subject</th>
-                    <th className={TH}>Faculty</th>
-                    <th className={TH}>Room</th>
-                    <th className={TH}>Credits</th>
+                    <th scope="col" className={TH}>Code</th>
+                    <th scope="col" className={TH}>Subject</th>
+                    <th scope="col" className={TH}>Faculty</th>
+                    <th scope="col" className={TH}>Room</th>
+                    <th scope="col" className={TH}>Credits</th>
                   </tr>
                 </thead>
                 <tbody>
