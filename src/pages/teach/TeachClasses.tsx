@@ -32,12 +32,22 @@ export default function TeachClasses() {
   const [tab, setTab] = useState<"attendance" | "roster" | "history">(
     "attendance",
   );
-  const [subjectId, setSubjectId] = useState<Id<"subjects"> | null>(null);
+  // Subject choice is keyed to the class it belongs to, so switching class
+  // can never carry a stale subjectId into the mark sheet (the backend
+  // rejects a subject that is not on the chosen class register).
+  const [subjectPick, setSubjectPick] = useState<{
+    cls: string;
+    id: Id<"subjects">;
+  } | null>(null);
   const [date, setDate] = useState(() => isoFromTs(Date.now()));
   const [saving, setSaving] = useState(false);
 
   const classes = overview?.classes ?? [];
   const activeClass = className ?? classes[0] ?? null;
+  const subjectId =
+    subjectPick !== null && subjectPick.cls === activeClass
+      ? subjectPick.id
+      : null;
 
   const roster = useQuery(
     api.teacher.classRoster,
@@ -219,7 +229,13 @@ export default function TeachClasses() {
               <select
                 id="att-subject"
                 value={activeSubject ?? ""}
-                onChange={(event) => setSubjectId(event.target.value as Id<"subjects">)}
+                onChange={(event) => {
+                  if (!activeClass) return;
+                  setSubjectPick({
+                    cls: activeClass,
+                    id: event.target.value as Id<"subjects">,
+                  });
+                }}
                 className="mt-1.5 block w-full cursor-pointer border border-border bg-card px-2 py-2 text-sm outline-none"
               >
                 {subjects.map((subject) => (
@@ -402,7 +418,9 @@ export default function TeachClasses() {
       {tab === "history" && (
         <Panel
           title="Register history"
-          meta={`Latest ${historyRows.length} entries`}
+          meta={`Latest ${historyRows.length} entries · ${
+            subjectId ? "selected subject only" : "all subjects"
+          }`}
         >
           {historyRows.length === 0 ? (
             <EmptyState>
@@ -452,8 +470,9 @@ export default function TeachClasses() {
                         <button
                           type="button"
                           onClick={() => {
+                            if (!activeClass) return;
                             setDate(row.date);
-                            setSubjectId(row.subjectId);
+                            setSubjectPick({ cls: activeClass, id: row.subjectId });
                             setTab("attendance");
                           }}
                           className="label-caps cursor-pointer border border-border px-2 py-1 hover:bg-secondary"

@@ -35,8 +35,13 @@ function NoticeComposer({ classes }: { classes: string[] }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [category, setCategory] = useState<string>("circular");
-  const [audience, setAudience] = useState<string>("all");
+  // null = not chosen yet: teachers default to their first class (they can
+  // never post to "all"), administration defaults to the whole portal.
+  const [audience, setAudience] = useState<string | null>(null);
   const [pinned, setPinned] = useState(false);
+
+  const effectiveAudience =
+    audience ?? (isTeacher ? (classes[0] ?? "") : "all");
 
   if (!open) {
     return (
@@ -56,7 +61,7 @@ function NoticeComposer({ classes }: { classes: string[] }) {
     setTitle("");
     setBody("");
     setCategory("circular");
-    setAudience("all");
+    setAudience(null);
     setPinned(false);
   };
 
@@ -69,6 +74,14 @@ function NoticeComposer({ classes }: { classes: string[] }) {
       toast.error("Notice text must be at least 10 characters");
       return;
     }
+    if (!effectiveAudience) {
+      toast.error(
+        isTeacher
+          ? "No class is allotted to you yet"
+          : "Choose an audience",
+      );
+      return;
+    }
     setBusy(true);
     try {
       if (isTeacher) {
@@ -76,7 +89,7 @@ function NoticeComposer({ classes }: { classes: string[] }) {
           title: title.trim(),
           body: body.trim(),
           category,
-          audience,
+          audience: effectiveAudience,
           pinned,
         });
       } else {
@@ -84,7 +97,7 @@ function NoticeComposer({ classes }: { classes: string[] }) {
           title: title.trim(),
           body: body.trim(),
           category,
-          audience,
+          audience: effectiveAudience,
           pinned,
         });
       }
@@ -167,7 +180,7 @@ function NoticeComposer({ classes }: { classes: string[] }) {
             </label>
             <select
               id="notice-audience"
-              value={audience}
+              value={effectiveAudience}
               onChange={(event) => setAudience(event.target.value)}
               className="mt-1.5 w-full cursor-pointer border border-border bg-card px-2 py-2 text-sm outline-none"
             >
