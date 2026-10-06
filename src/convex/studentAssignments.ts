@@ -17,14 +17,17 @@ function stateOf(
   return now > activity.dueAt + GRACE_MS ? "missing" : "overdue";
 }
 
-/** How many students are on the class register. */
+/** How many active students are on the class register. */
 async function classStrength(
   ctx: QueryCtx,
   className: string,
 ): Promise<number> {
   const users = await ctx.db.query("users").collect();
   return users.filter(
-    (u) => u.role === "student" && u.className === className,
+    (u) =>
+      u.role === "student" &&
+      u.className === className &&
+      u.status !== "inactive",
   ).length;
 }
 

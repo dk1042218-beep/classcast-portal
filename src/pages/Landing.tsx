@@ -172,7 +172,7 @@ export default function Landing() {
                   <Link to={isAuthenticated ? "/dashboard" : "/auth"}>
                     {isAuthenticated
                       ? "Open your dashboard"
-                      : "Sign in to your student desk"}
+                      : "Sign in to your desk"}
                     <ArrowRight className="ml-2 size-4" />
                   </Link>
                 </Button>

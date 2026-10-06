@@ -575,7 +575,10 @@ export const activitySubmissions = query({
       .withIndex("by_activity", (q) => q.eq("activityId", activity._id))
       .collect();
     const classStrength = (await ctx.db.query("users").collect()).filter(
-      (u) => u.role === "student" && u.className === activity.className,
+      (u) =>
+        u.role === "student" &&
+        u.className === activity.className &&
+        u.status !== "inactive",
     ).length;
 
     const out = [];
@@ -601,7 +604,12 @@ export const activitySubmissions = query({
     }
 
     const enrolled = (await ctx.db.query("users").collect())
-      .filter((u) => u.role === "student" && u.className === activity.className)
+      .filter(
+        (u) =>
+          u.role === "student" &&
+          u.className === activity.className &&
+          u.status !== "inactive",
+      )
       .sort((a, b) => (a.rollNo ?? "").localeCompare(b.rollNo ?? ""))
       .map((u) => ({
         studentId: u._id,
