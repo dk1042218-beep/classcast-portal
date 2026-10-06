@@ -2,6 +2,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import {
   EmptyState,
+  formatBytes,
   formatDate,
   formatClock,
   Loader,
@@ -12,10 +13,16 @@ import {
 } from "@/components/portal/primitives";
 import { Button } from "@/components/ui/button";
 import { useMutation, useQuery } from "convex/react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Paperclip, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import { toast } from "sonner";
+
+const MAX_BYTES = 10 * 1024 * 1024;
+const ALLOWED = [
+  "pdf", "doc", "docx", "ppt", "pptx", "txt", "csv",
+  "png", "jpg", "jpeg", "zip",
+];
 
 const LABELS: Record<string, string> = {
   open: "Open",
@@ -43,7 +50,18 @@ export default function Assignments() {
 
   const [draft, setDraft] = useState<{ id: string; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+  // The picked file is keyed to its assignment, so switching items never
+  // carries an attachment across to a different submission.
+  const [filePick, setFilePick] = useState<{
+    id: string;
+    file: File;
+  } | null>(null);
+  const file =
+    detail && filePick?.id === detail.id ? filePick.file : null;
   const submit = useMutation(api.studentAssignments.submitAssignment);
+  const generateUploadUrl = useMutation(
+    api.studentAssignments.generateSubmissionUploadUrl,
+  );
 
   // The draft is keyed to the selected assignment, so switching items shows
   // that item's saved answer without seeding state from an effect.
@@ -67,17 +85,57 @@ export default function Assignments() {
 
   if (!items) return <Loader />;
 
+  const pickFile = (picked: File | null) => {
+    if (!detail) return;
+    if (!picked) return setFilePick(null);
+    const ext = picked.name.toLowerCase().split(".").pop() ?? "";
+    if (!ALLOWED.includes(ext)) {
+      toast.error(`File type not allowed. Accepted: ${ALLOWED.join(", ")}`);
+      return;
+    }
+    if (picked.size > MAX_BYTES) {
+      toast.error("File exceeds the 10 MB upload limit");
+      return;
+    }
+    if (picked.size === 0) {
+      toast.error("That file is empty");
+      return;
+    }
+    setFilePick({ id: detail.id, file: picked });
+  };
+
   const handleSubmit = async () => {
     if (!detail) return;
     setBusy(true);
     try {
-      const result = await submit({ activityId: detail.id, answer });
+      let attachment: { fileName: string; objectKey: string } | undefined;
+      if (file) {
+        const uploadUrl = await generateUploadUrl({});
+        const response = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": file.type || "application/octet-stream" },
+          body: file,
+        });
+        if (!response.ok) throw new Error("Upload failed — try a smaller file");
+        const { storageId } = (await response.json()) as { storageId: string };
+        attachment = { fileName: file.name, objectKey: storageId };
+      }
+      const result = await submit({
+        activityId: detail.id,
+        answer,
+        file: attachment,
+      });
       toast.success(
         result.isLate
           ? "Submission recorded after the deadline — marked late."
           : "Submission recorded before the deadline.",
-        { description: `${detail.title} · ${formatDate(Date.now())}` },
+        {
+          description: `${detail.title} · ${formatDate(Date.now())}${
+            file ? ` · ${file.name} attached` : ""
+          }`,
+        },
       );
+      setFilePick(null);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Could not save submission",
@@ -236,6 +294,18 @@ export default function Assignments() {
                         {detail.submission.answer}
                       </p>
                     </div>
+                    {detail.submission.fileUrl && (
+                      <a
+                        href={detail.submission.fileUrl}
+                        download={detail.submission.fileName ?? undefined}
+                        className="label-caps mt-2 inline-flex cursor-pointer items-center gap-1.5 border border-border px-2 py-1.5 hover:bg-secondary"
+                      >
+                        <Paperclip className="size-3.5" />
+                        {detail.submission.fileName}
+                        {detail.submission.fileSize != null &&
+                          ` · ${formatBytes(detail.submission.fileSize)}`}
+                      </a>
+                    )}
                   </div>
                 ) : detail.canSubmit ? (
                   <div className="mt-2">
@@ -247,6 +317,44 @@ export default function Assignments() {
                       placeholder="Type your answer or paste your work here…"
                       className="ruled w-full resize-y border border-border bg-background px-3 py-2 text-sm leading-7 outline-none placeholder:text-muted-foreground focus:border-primary"
                     />
+                    <div className="mt-2 flex flex-wrap items-center gap-3">
+                      <label className="label-caps flex cursor-pointer items-center gap-1.5 border border-border px-2 py-1.5 hover:bg-secondary">
+                        <Paperclip className="size-3.5" />
+                        {file ? "Change file" : "Attach a file (optional)"}
+                        <input
+                          type="file"
+                          accept={ALLOWED.map((ext) => `.${ext}`).join(",")}
+                          onChange={(event) =>
+                            pickFile(event.target.files?.[0] ?? null)
+                          }
+                          className="hidden"
+                        />
+                      </label>
+                      {file && (
+                        <span className="label-caps flex items-center gap-1.5 border border-accent/40 bg-accent/10 px-2 py-1.5 text-accent">
+                          {file.name} · {formatBytes(file.size)}
+                          <button
+                            type="button"
+                            onClick={() => setFilePick(null)}
+                            className="cursor-pointer hover:text-foreground"
+                            aria-label="Remove attachment"
+                          >
+                            <X className="size-3" />
+                          </button>
+                        </span>
+                      )}
+                      {detail.submission?.fileUrl && !file && (
+                        <a
+                          href={detail.submission.fileUrl}
+                          download={detail.submission.fileName ?? undefined}
+                          className="label-caps flex cursor-pointer items-center gap-1.5 border border-border px-2 py-1.5 hover:bg-secondary"
+                        >
+                          <Paperclip className="size-3.5" />
+                          Current file: {detail.submission.fileName} (replaced on
+                          submit)
+                        </a>
+                      )}
+                    </div>
                     <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
                       <span className="label-caps text-muted-foreground">
                         {answer.length}/8000 characters
@@ -262,6 +370,34 @@ export default function Assignments() {
                         {detail.submission ? "Update submission" : "Submit work"}
                       </Button>
                     </div>
+                  </div>
+                ) : detail.submission ? (
+                  <div className="mt-2 border border-border bg-secondary/40 px-3 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="stamp mt-0.5">Submitted</span>
+                      <span className="label-caps text-muted-foreground">
+                        {formatDate(detail.submission.submittedAt)} ·{" "}
+                        {formatClock(detail.submission.submittedAt)}
+                        {detail.submission.isLate && " · late"} · window closed
+                      </span>
+                    </div>
+                    <div className="ruled mt-2 border border-border bg-background px-3 py-2">
+                      <p className="text-sm whitespace-pre-wrap">
+                        {detail.submission.answer}
+                      </p>
+                    </div>
+                    {detail.submission.fileUrl && (
+                      <a
+                        href={detail.submission.fileUrl}
+                        download={detail.submission.fileName ?? undefined}
+                        className="label-caps mt-2 inline-flex cursor-pointer items-center gap-1.5 border border-border px-2 py-1.5 hover:bg-secondary"
+                      >
+                        <Paperclip className="size-3.5" />
+                        {detail.submission.fileName}
+                        {detail.submission.fileSize != null &&
+                          ` · ${formatBytes(detail.submission.fileSize)}`}
+                      </a>
+                    )}
                   </div>
                 ) : (
                   <div className="mt-2 flex items-start gap-3 border border-border bg-secondary/40 px-3 py-3">

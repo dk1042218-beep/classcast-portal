@@ -104,6 +104,13 @@ export const attendanceSummary = query({
       .withIndex("by_student", (q) => q.eq("studentId", student._id))
       .collect();
 
+    // The attendance floor is portal configuration saved by the admin desk.
+    const settings = await ctx.db
+      .query("settings")
+      .withIndex("by_key", (q) => q.eq("key", "portal"))
+      .unique();
+    const floor = settings?.minAttendance ?? 75;
+
     const perSubject = new Map<
       string,
       { present: number; absent: number; late: number; total: number }
@@ -136,7 +143,8 @@ export const attendanceSummary = query({
           total: 0,
         };
         const pct = agg.total ? Math.round((agg.present / agg.total) * 100) : 0;
-        const shortfall = pct < 75 ? Math.ceil(0.75 * agg.total) - agg.present : 0;
+        const shortfall =
+          pct < floor ? Math.ceil((floor / 100) * agg.total) - agg.present : 0;
         return {
           subjectId: subject._id,
           code: subject.code,
@@ -173,13 +181,15 @@ export const attendanceSummary = query({
     const total = rows.length;
     const overallPct = total ? Math.round((present / total) * 100) : 0;
     return {
+      minAttendance: floor,
       overall: {
         present,
         late,
         absent: total - present,
         total,
         pct: overallPct,
-        shortfall: overallPct < 75 ? Math.ceil(0.75 * total) - present : 0,
+        shortfall:
+          overallPct < floor ? Math.ceil((floor / 100) * total) - present : 0,
       },
       subjects,
       history,

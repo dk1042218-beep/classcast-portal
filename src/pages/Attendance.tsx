@@ -24,7 +24,8 @@ export default function Attendance() {
 
   if (!record) return <Loader />;
 
-  const below = record.subjects.filter((subject) => subject.pct < 75);
+  const floor = record.minAttendance;
+  const below = record.subjects.filter((subject) => subject.pct < floor);
 
   return (
     <div>
@@ -33,7 +34,7 @@ export default function Attendance() {
         description="Marked by faculty at each lecture. Late arrival counts as present and is noted separately."
         action={
           <span className="label-caps border border-border bg-secondary px-2 py-1 text-muted-foreground">
-            Minimum required · 75%
+            Minimum required · {floor}%
           </span>
         }
       />
@@ -62,7 +63,7 @@ export default function Attendance() {
           value={below.length === 0 ? "Clear" : `${below.length} short`}
           sub={
             record.overall.shortfall > 0
-              ? `Attend ${record.overall.shortfall} more to reach 75%`
+              ? `Attend ${record.overall.shortfall} more to reach ${floor}%`
               : "Above the required minimum"
           }
           tone={below.length === 0 ? "info" : "alert"}
@@ -99,7 +100,7 @@ export default function Attendance() {
                     <Meter pct={subject.pct} />
                   </td>
                   <td className={TD}>
-                    {subject.pct >= 75 ? (
+                    {subject.pct >= floor ? (
                       <StatusTag tone="info">Satisfactory</StatusTag>
                     ) : (
                       <StatusTag tone="alert">

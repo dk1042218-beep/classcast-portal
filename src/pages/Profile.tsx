@@ -13,9 +13,9 @@ import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 
 export default function Profile() {
-  const me = useQuery(api.studentProfile.profileMe);
-  const updateProfile = useMutation(api.studentProfile.updateProfile);
-  const changePassword = useMutation(api.studentProfile.changePassword);
+  const me = useQuery(api.desk.profileMe);
+  const updateProfile = useMutation(api.desk.updateProfile);
+  const changePassword = useMutation(api.desk.changePassword);
 
   const [saving, setSaving] = useState(false);
   const [current, setCurrent] = useState("");
@@ -71,11 +71,19 @@ export default function Profile() {
     }
   };
 
+  const roleLabel =
+    me.profile.role === "teacher"
+      ? "Faculty record"
+      : me.profile.role === "admin"
+        ? "Administration record"
+        : "Student record";
+
   const locked: [string, string][] = [
     ["Portal ID", me.profile.portalId],
     ["Roll number", me.profile.rollNo],
     ["Class", me.profile.className],
     ["Department", me.profile.department],
+    ["Designation", me.profile.designation],
     ["Role", me.profile.role ?? "student"],
     ["Account status", me.profile.status],
   ];
@@ -85,7 +93,7 @@ export default function Profile() {
       <PageHeader
         title="Profile & security"
         description="Your contact details are yours to edit. Registration details are held by the Office of Academics."
-        action={<span className="stamp">Student record</span>}
+        action={<span className="stamp">{roleLabel}</span>}
       />
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -176,6 +184,18 @@ export default function Profile() {
                 Class mentor: <strong>{me.classInfo.mentor}</strong> · Room{" "}
                 {me.classInfo.room} · {me.classInfo.term} · AY{" "}
                 {me.classInfo.academicYear}
+              </p>
+            )}
+            {me.profile.role === "teacher" && (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Subjects allotted: <strong>{me.subjectCount}</strong> · Office
+                hours set by the department
+              </p>
+            )}
+            {me.attendance && (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Attendance standing: <strong>{me.attendance.pct}%</strong> ·{" "}
+                {me.attendance.present} of {me.attendance.total} lectures
               </p>
             )}
           </Panel>

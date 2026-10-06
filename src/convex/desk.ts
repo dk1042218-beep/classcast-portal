@@ -66,13 +66,35 @@ export const markAllNotificationsRead = mutation({
   },
 });
 
-/** Notice board for every desk: pinned first, with audience + ownership. */
+/** Notice board for every desk: pinned first, with audience + ownership.
+ * Students only see portal-wide notices and notices for their own class;
+ * teachers additionally see notices issued to classes they teach.
+ */
 export const noticesList = query({
   args: {},
   handler: async (ctx) => {
     const user = await requireDeskUser(ctx);
+
+    let classNames: string[] = [];
+    if (user.role === "teacher") {
+      const mine = await ctx.db
+        .query("subjects")
+        .withIndex("by_teacher", (q) => q.eq("teacherId", user._id))
+        .collect();
+      classNames = Array.from(new Set(mine.map((s) => s.className)));
+    } else if (user.role === "student") {
+      classNames = user.className ? [user.className] : [];
+    }
+
     const rows = await ctx.db.query("notices").collect();
     return rows
+      .filter(
+        (n) =>
+          user.role === "admin" ||
+          n.audience === "all" ||
+          classNames.includes(n.audience) ||
+          n.issuedById === user._id,
+      )
       .sort(
         (a, b) =>
           Number(b.pinned) - Number(a.pinned) || b.publishedAt - a.publishedAt,

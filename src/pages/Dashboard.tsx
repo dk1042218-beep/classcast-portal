@@ -17,6 +17,7 @@ import {
   toneForState,
 } from "@/components/portal/primitives";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 import { useQuery } from "convex/react";
 import {
   ArrowUpRight,
@@ -26,6 +27,8 @@ import {
   Pin,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router";
+import AdminDashboard from "./admin/AdminDashboard";
+import TeachDashboard from "./teach/TeachDashboard";
 
 const toMinutes = (hhmm: string) => {
   const [h, m] = hhmm.split(":").map(Number);
@@ -50,7 +53,20 @@ function Loading() {
   );
 }
 
+/**
+ * The single /dashboard route serves every desk: the dispatcher below picks
+ * the desk by the signed-in role so no student query is ever executed by a
+ * faculty or admin session (and vice versa).
+ */
 export default function Dashboard() {
+  const { user, isLoading } = useAuth();
+  if (isLoading || !user) return <Loading />;
+  if (user.role === "teacher") return <TeachDashboard />;
+  if (user.role === "admin") return <AdminDashboard />;
+  return <StudentDashboard />;
+}
+
+function StudentDashboard() {
   const { today, day } = todayInfo();
   const overview = useQuery(api.studentDashboard.overview, { today, day });
   const navigate = useNavigate();

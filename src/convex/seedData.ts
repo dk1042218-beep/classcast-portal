@@ -52,10 +52,10 @@ export const USERS: SeedUser[] = [
   { name: "Dilshad Ansari", portalId: "ST-104", role: "student", email: "dilshad.ansari@vics.ac.in", phone: "+91 98220 41104", className: "TYBSc CS", rollNo: "104", department: "Computer Science", password: DEMO_PASSWORD },
   { name: "Meera Joshi", portalId: "ST-105", role: "student", email: "meera.joshi@vics.ac.in", phone: "+91 98220 41105", className: "TYBSc CS", rollNo: "105", department: "Computer Science", password: DEMO_PASSWORD },
   { name: "Vikram Rao", portalId: "ST-106", role: "student", email: "vikram.rao@vics.ac.in", phone: "+91 98220 41106", className: "TYBSc CS", rollNo: "106", department: "Computer Science", password: DEMO_PASSWORD },
-  { name: "Yaseera Qureshi", portalId: "TCH-1042", role: "teacher", email: "yaseera.qureshi@vics.ac.in", phone: "+91 98220 50042", department: "Computer Science", designation: "Assistant Professor" },
-  { name: "Rohan Mehta", portalId: "TCH-1087", role: "teacher", email: "rohan.mehta@vics.ac.in", phone: "+91 98220 50087", department: "Computer Science", designation: "Associate Professor" },
-  { name: "Farhan Shaikh", portalId: "TCH-1113", role: "teacher", email: "farhan.shaikh@vics.ac.in", phone: "+91 98220 50113", department: "Computer Science", designation: "Assistant Professor" },
-  { name: "Sundaram Iyer", portalId: "ADM-0001", role: "admin", email: "s.iyer@vics.ac.in", phone: "+91 98220 10001", department: "Office of Academics", designation: "Registrar" },
+  { name: "Yaseera Qureshi", portalId: "TCH-1042", role: "teacher", email: "yaseera.qureshi@vics.ac.in", phone: "+91 98220 50042", department: "Computer Science", designation: "Assistant Professor", password: DEMO_PASSWORD },
+  { name: "Rohan Mehta", portalId: "TCH-1087", role: "teacher", email: "rohan.mehta@vics.ac.in", phone: "+91 98220 50087", department: "Computer Science", designation: "Associate Professor", password: DEMO_PASSWORD },
+  { name: "Farhan Shaikh", portalId: "TCH-1113", role: "teacher", email: "farhan.shaikh@vics.ac.in", phone: "+91 98220 50113", department: "Computer Science", designation: "Assistant Professor", password: DEMO_PASSWORD },
+  { name: "Sundaram Iyer", portalId: "ADM-0001", role: "admin", email: "s.iyer@vics.ac.in", phone: "+91 98220 10001", department: "Office of Academics", designation: "Registrar", password: DEMO_PASSWORD },
 ];
 
 export const CLASSES = [

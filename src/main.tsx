@@ -1,6 +1,7 @@
 import '@vly-ai/integrations';
 import { Toaster } from "@/components/ui/sonner";
 import { RequireAuth } from "@/components/RequireAuth";
+import { RoleGate } from "@/components/portal/RoleGate";
 import { VlyToolbar } from "../vly-toolbar-readonly.tsx";
 import { ConvexAuthProvider } from "@convex-dev/auth/react";
 import { ConvexReactClient } from "convex/react";
@@ -23,6 +24,16 @@ const Notices = lazy(() => import("./pages/Notices.tsx"));
 const Notifications = lazy(() => import("./pages/Notifications.tsx"));
 const Profile = lazy(() => import("./pages/Profile.tsx"));
 const SearchPage = lazy(() => import("./pages/Search.tsx"));
+const Calendar = lazy(() => import("./pages/Calendar.tsx"));
+const TeachClasses = lazy(() => import("./pages/teach/TeachClasses.tsx"));
+const TeachNotes = lazy(() => import("./pages/teach/TeachNotes.tsx"));
+const TeachAssignments = lazy(() =>
+  import("./pages/teach/TeachAssignments.tsx"),
+);
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers.tsx"));
+const AdminAcademics = lazy(() => import("./pages/admin/AdminAcademics.tsx"));
+const AdminReports = lazy(() => import("./pages/admin/AdminReports.tsx"));
+const AdminSettings = lazy(() => import("./pages/admin/AdminSettings.tsx"));
 
 // Simple loading fallback for route transitions
 function RouteLoading() {
@@ -145,14 +156,114 @@ createRoot(document.getElementById("root")!).render(
                 }
               >
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/timetable" element={<Timetable />} />
-                <Route path="/attendance" element={<Attendance />} />
-                <Route path="/notes" element={<Notes />} />
-                <Route path="/assignments" element={<Assignments />} />
+                <Route
+                  path="/timetable"
+                  element={
+                    <RoleGate allow={["student"]}>
+                      <Timetable />
+                    </RoleGate>
+                  }
+                />
+                <Route
+                  path="/calendar"
+                  element={
+                    <RoleGate allow={["student"]}>
+                      <Calendar />
+                    </RoleGate>
+                  }
+                />
+                <Route
+                  path="/attendance"
+                  element={
+                    <RoleGate allow={["student"]}>
+                      <Attendance />
+                    </RoleGate>
+                  }
+                />
+                <Route
+                  path="/notes"
+                  element={
+                    <RoleGate allow={["student"]}>
+                      <Notes />
+                    </RoleGate>
+                  }
+                />
+                <Route
+                  path="/assignments"
+                  element={
+                    <RoleGate allow={["student"]}>
+                      <Assignments />
+                    </RoleGate>
+                  }
+                />
                 <Route path="/notices" element={<Notices />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/search" element={<SearchPage />} />
+                <Route
+                  path="/teach/classes"
+                  element={
+                    <RoleGate allow={["teacher"]}>
+                      <TeachClasses />
+                    </RoleGate>
+                  }
+                />
+                <Route
+                  path="/teach/notes"
+                  element={
+                    <RoleGate allow={["teacher"]}>
+                      <TeachNotes />
+                    </RoleGate>
+                  }
+                />
+                <Route
+                  path="/teach/assignments"
+                  element={
+                    <RoleGate allow={["teacher"]}>
+                      <TeachAssignments />
+                    </RoleGate>
+                  }
+                />
+                <Route
+                  path="/admin/students"
+                  element={
+                    <RoleGate allow={["admin"]}>
+                      <AdminUsers role="student" />
+                    </RoleGate>
+                  }
+                />
+                <Route
+                  path="/admin/teachers"
+                  element={
+                    <RoleGate allow={["admin"]}>
+                      <AdminUsers role="teacher" />
+                    </RoleGate>
+                  }
+                />
+                <Route
+                  path="/admin/academics"
+                  element={
+                    <RoleGate allow={["admin"]}>
+                      <AdminAcademics />
+                    </RoleGate>
+                  }
+                />
+                <Route
+                  path="/admin/reports"
+                  element={
+                    <RoleGate allow={["admin"]}>
+                      <AdminReports />
+                    </RoleGate>
+                  }
+                />
+                <Route
+                  path="/admin/settings"
+                  element={
+                    <RoleGate allow={["admin"]}>
+                      <AdminSettings />
+                    </RoleGate>
+                  }
+                />
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>

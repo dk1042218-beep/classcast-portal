@@ -92,13 +92,14 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
             ClassCast
           </h1>
           <p className="label-caps mt-3 text-muted-foreground">
-            Academic Portal · Student Desk · Version 1
+            Academic Portal · Student · Faculty · Administration
           </p>
 
           <div className="rule-double mt-6" />
           <p className="mt-5 max-w-md text-sm leading-6 text-muted-foreground">
             Your working record for the term — kept the way the office keeps
-            it: dated, signed and in one place.
+            it: dated, signed and in one place. One portal ID opens the desk
+            allotted to you.
           </p>
           <ul className="mt-4 max-w-md space-y-1.5 text-sm">
             {[
@@ -119,8 +120,9 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
         <div className="border border-border bg-card p-4">
           <p className="label-caps text-muted-foreground">Notice</p>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            Sign in with the portal ID issued to you. Faculty and office desks
-            open in version 2 of ClassCast.
+            Sign in with the portal ID issued to you — ST- for students, TCH-
+            for faculty, ADM- for the Office of Academics. Each desk opens only
+            its own section.
           </p>
         </div>
       </div>
@@ -136,7 +138,7 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
           <div className="border border-border bg-card">
             <div className="flex items-center justify-between border-b border-border px-5 py-3">
               <h2 className="font-editorial text-xl font-bold tracking-tight">
-                Student sign-in
+                Portal sign-in
               </h2>
               <span className="label-caps text-muted-foreground">Term I</span>
             </div>
@@ -153,8 +155,8 @@ function Auth({ redirectAfterAuth }: AuthProps = {}) {
                   id="identifier"
                   value={identifier}
                   onChange={(event) => setIdentifier(event.target.value)}
-                  placeholder="ST-101"
-                  autoComplete="username"
+                placeholder="ST-101 · TCH-1042 · ADM-0001"
+                autoComplete="username"
                   className="mt-1.5 font-code"
                   disabled={isLoading}
                   required

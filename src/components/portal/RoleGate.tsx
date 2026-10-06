@@ -27,7 +27,7 @@ export function RoleGate({
     );
   }
 
-  const authorized = user.role !== null && allow.includes(user.role);
+  const authorized = user.role != null && allow.includes(user.role);
 
   if (!authorized || user.status === "inactive") {
     return (

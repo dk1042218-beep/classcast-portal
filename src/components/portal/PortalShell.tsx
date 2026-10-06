@@ -32,8 +32,8 @@ const STUDENT_NAV: NavItem[] = [
 const TEACHER_NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: "▦" },
   { to: "/teach/classes", label: "Classes & Attendance", icon: "☰" },
-  { to: "/notes", label: "Notes & Files", icon: "≣" },
-  { to: "/assignments", label: "Assignments", icon: "✎" },
+  { to: "/teach/notes", label: "Notes & Files", icon: "≣" },
+  { to: "/teach/assignments", label: "Assignments", icon: "✎" },
   { to: "/notices", label: "Notice Board", icon: "▣" },
   { to: "/notifications", label: "Notifications", icon: "◉" },
   { to: "/profile", label: "Profile & Security", icon: "◐" },
@@ -110,7 +110,18 @@ export default function PortalShell() {
   const navigate = useNavigate();
   const location = useLocation();
   const ready = useEnsureSeed();
-  const notifications = useQuery(api.desk.notificationsList);
+  // Only subscribe to the desk API when this account really holds a desk —
+  // an unroled or deactivated session must never trigger "Not authorized".
+  const deskReady =
+    user != null &&
+    (user.role === "student" ||
+      user.role === "teacher" ||
+      user.role === "admin") &&
+    user.status !== "inactive";
+  const notifications = useQuery(
+    api.desk.notificationsList,
+    deskReady ? {} : "skip",
+  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
 

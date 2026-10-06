@@ -25,9 +25,9 @@ const KIND_LABEL: Record<string, string> = {
 };
 
 export default function Notifications() {
-  const data = useQuery(api.studentPortal.notificationsList);
-  const markRead = useMutation(api.studentPortal.markNotificationRead);
-  const markAll = useMutation(api.studentPortal.markAllNotificationsRead);
+  const data = useQuery(api.desk.notificationsList);
+  const markRead = useMutation(api.desk.markNotificationRead);
+  const markAll = useMutation(api.desk.markAllNotificationsRead);
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
 

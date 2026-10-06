@@ -15,7 +15,7 @@ type Section = { key: string; title: string; rows: { id: string; title: string; 
 export default function SearchPage() {
   const [params, setParams] = useSearchParams();
   const q = params.get("q") ?? "";
-  const results = useQuery(api.studentSearch.globalSearch, { q });
+  const results = useQuery(api.desk.globalSearch, { q });
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -30,6 +30,7 @@ export default function SearchPage() {
         { key: "notes", title: "Notes & files", rows: results.notes },
         { key: "assignments", title: "Assignments", rows: results.assignments },
         { key: "notices", title: "Notices", rows: results.notices },
+        { key: "people", title: "People", rows: results.people },
       ].filter((section) => section.rows.length > 0)
     : [];
 
@@ -39,7 +40,7 @@ export default function SearchPage() {
     <div>
       <PageHeader
         title="Search the portal"
-        description="Looks across your class's subjects, notes and assignments plus every notice on the board. Results come from the database, scoped to your record."
+        description="Looks across your desk's subjects, notes and assignments, every notice on the board and — for faculty and administration — the people on the register. Results come from the database, scoped to your role."
       />
 
       <form onSubmit={handleSubmit} className="mb-5 flex gap-2">

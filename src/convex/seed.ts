@@ -7,6 +7,7 @@ import { DAY_MS, isoDate, utcMidnight } from "./lib";
 import {
   ACTIVITIES,
   CLASSES,
+  DEMO_PASSWORD,
   NOTES,
   NOTICES,
   SCHEDULE,
@@ -40,6 +41,7 @@ export const status = query({
     return {
       coreSeeded: await read("core"),
       attendanceSeeded: await read("attendance"),
+      credentialsSeeded: await read("credentials"),
     };
   },
 });
@@ -48,7 +50,13 @@ export const ensureSeeded = action({
   args: {},
   handler: async (ctx) => {
     const state = await ctx.runQuery(api.seed.status, {});
-    if (state.coreSeeded && state.attendanceSeeded) return { seeded: false };
+    if (
+      state.coreSeeded &&
+      state.attendanceSeeded &&
+      state.credentialsSeeded
+    ) {
+      return { seeded: false };
+    }
 
     const now = Date.now();
 
@@ -80,7 +88,51 @@ export const ensureSeeded = action({
       await ctx.runMutation(internal.seed.insertAttendance, { now });
     }
 
+    if (!state.credentialsSeeded) {
+      await ctx.runMutation(internal.seed.backfillCredentials, { now });
+    }
+
     return { seeded: true };
+  },
+});
+
+/**
+ * One-time backfill: faculty and administration accounts seeded before
+ * password sign-in shipped have no `credentials` row, so they could never
+ * sign in. Give every credential-less teacher/admin the demo password once,
+ * guarded by the seedState flag so it can never re-run over live accounts.
+ */
+export const backfillCredentials = internalMutation({
+  args: { now: v.number() },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("seedState")
+      .withIndex("by_key", (q) => q.eq("key", "credentials"))
+      .unique();
+    if (existing !== null) return { skipped: true };
+
+    const users = await ctx.db.query("users").collect();
+    let created = 0;
+    for (const user of users) {
+      if (user.role !== "teacher" && user.role !== "admin") continue;
+      const credential = await ctx.db
+        .query("credentials")
+        .withIndex("by_user", (q) => q.eq("userId", user._id))
+        .unique();
+      if (credential !== null) continue;
+      await ctx.db.insert("credentials", {
+        userId: user._id,
+        hash: await hashPassword(DEMO_PASSWORD),
+        updatedAt: args.now,
+      });
+      created++;
+    }
+
+    await ctx.db.insert("seedState", {
+      key: "credentials",
+      value: new Date(args.now).toISOString(),
+    });
+    return { skipped: false, created };
   },
 });
 
