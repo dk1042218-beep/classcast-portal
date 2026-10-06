@@ -65,6 +65,8 @@ const schema = defineSchema(
       code: v.string(), // TYCS
       academicYear: v.string(), // 2026-27
       term: v.string(), // Term I
+      semester: v.optional(v.number()), // semester number, e.g. 5
+      division: v.optional(v.string()), // e.g. A
       mentor: v.string(), // class mentor display name
       room: v.string(), // home room
     }).index("by_name", ["name"]),
@@ -130,6 +132,10 @@ const schema = defineSchema(
       score: v.optional(v.number()),
       feedback: v.optional(v.string()),
       gradedAt: v.optional(v.number()),
+      // Optional file attachment for the submission.
+      fileName: v.optional(v.string()),
+      objectKey: v.optional(v.string()),
+      fileSize: v.optional(v.number()),
     })
       .index("by_student", ["studentId"])
       .index("by_activity", ["activityId"])
@@ -146,7 +152,8 @@ const schema = defineSchema(
     })
       .index("by_student", ["studentId"])
       .index("by_student_date", ["studentId", "date"])
-      .index("by_subject", ["subjectId"]),
+      .index("by_subject", ["subjectId"])
+      .index("by_class_date", ["className", "date"]),
 
     notices: defineTable({
       title: v.string(),
@@ -157,6 +164,9 @@ const schema = defineSchema(
       pinned: v.boolean(),
       publishedAt: v.number(),
       dateStr: v.string(),
+      // The account that issued the notice (teacher or admin), so authors can
+      // manage their own posts. Optional for legacy seeded rows.
+      issuedById: v.optional(v.id("users")),
     }), // small table: scanned and filtered in queries
 
     notifications: defineTable({
@@ -173,6 +183,17 @@ const schema = defineSchema(
     seedState: defineTable({
       key: v.string(), // "core" | "attendance"
       value: v.string(),
+    }).index("by_key", ["key"]),
+
+    // Portal-wide academic settings, managed by the admin desk.
+    settings: defineTable({
+      key: v.string(), // "portal"
+      academicYear: v.string(),
+      term: v.string(),
+      minAttendance: v.number(), // required attendance percentage
+      contact: v.string(),
+      updatedBy: v.optional(v.string()),
+      updatedAt: v.optional(v.number()),
     }).index("by_key", ["key"]),
   },
   {

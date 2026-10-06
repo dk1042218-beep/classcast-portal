@@ -13,27 +13,68 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router";
 
 const TODAY = formatLongDate(Date.now());
 
-const NAV = [
-  { to: "/dashboard", label: "Dashboard", icon: "grid" },
-  { to: "/timetable", label: "Timetable", icon: "calendar" },
-  { to: "/attendance", label: "Attendance", icon: "clipboard" },
-  { to: "/notes", label: "Notes & Files", icon: "file" },
-  { to: "/assignments", label: "Assignments", icon: "pen" },
-  { to: "/notices", label: "Notice Board", icon: "megaphone" },
-  { to: "/notifications", label: "Notifications", icon: "bell" },
-  { to: "/profile", label: "Profile & Security", icon: "user" },
-] as const;
+type Role = "student" | "teacher" | "admin";
+
+type NavItem = { to: string; label: string; icon: string };
+
+const STUDENT_NAV: NavItem[] = [
+  { to: "/dashboard", label: "Dashboard", icon: "▦" },
+  { to: "/timetable", label: "Timetable", icon: "▤" },
+  { to: "/calendar", label: "Calendar", icon: "◫" },
+  { to: "/attendance", label: "Attendance", icon: "☑" },
+  { to: "/notes", label: "Notes & Files", icon: "≣" },
+  { to: "/assignments", label: "Assignments", icon: "✎" },
+  { to: "/notices", label: "Notice Board", icon: "▣" },
+  { to: "/notifications", label: "Notifications", icon: "◉" },
+  { to: "/profile", label: "Profile & Security", icon: "◐" },
+];
+
+const TEACHER_NAV: NavItem[] = [
+  { to: "/dashboard", label: "Dashboard", icon: "▦" },
+  { to: "/teach/classes", label: "Classes & Attendance", icon: "☰" },
+  { to: "/notes", label: "Notes & Files", icon: "≣" },
+  { to: "/assignments", label: "Assignments", icon: "✎" },
+  { to: "/notices", label: "Notice Board", icon: "▣" },
+  { to: "/notifications", label: "Notifications", icon: "◉" },
+  { to: "/profile", label: "Profile & Security", icon: "◐" },
+];
+
+const ADMIN_NAV: NavItem[] = [
+  { to: "/dashboard", label: "Dashboard", icon: "▦" },
+  { to: "/admin/students", label: "Students", icon: "◍" },
+  { to: "/admin/teachers", label: "Teachers", icon: "◎" },
+  { to: "/admin/academics", label: "Academics", icon: "◈" },
+  { to: "/admin/reports", label: "Reports", icon: "≡" },
+  { to: "/notices", label: "Notice Board", icon: "▣" },
+  { to: "/notifications", label: "Notifications", icon: "◉" },
+  { to: "/admin/settings", label: "System Settings", icon: "⚙" },
+  { to: "/profile", label: "Profile & Security", icon: "◐" },
+];
+
+function navFor(role: Role): NavItem[] {
+  if (role === "teacher") return TEACHER_NAV;
+  if (role === "admin") return ADMIN_NAV;
+  return STUDENT_NAV;
+}
+
+const DESK_LABEL: Record<Role, string> = {
+  student: "Student Desk",
+  teacher: "Faculty Desk",
+  admin: "Administration",
+};
 
 function NavItems({
+  items,
   onNavigate,
   unread,
 }: {
+  items: NavItem[];
   onNavigate?: () => void;
   unread: number;
 }) {
   return (
     <nav className="flex flex-col">
-      {NAV.map((item) => (
+      {items.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}
@@ -49,14 +90,7 @@ function NavItems({
         >
           <span className="flex items-center gap-2">
             <span className="label-caps w-4 text-center" aria-hidden>
-              {item.icon === "grid" && "▦"}
-              {item.icon === "calendar" && "▤"}
-              {item.icon === "clipboard" && "☑"}
-              {item.icon === "file" && "≣"}
-              {item.icon === "pen" && "✎"}
-              {item.icon === "megaphone" && "▣"}
-              {item.icon === "bell" && "◉"}
-              {item.icon === "user" && "◐"}
+              {item.icon}
             </span>
             {item.label}
           </span>
@@ -76,15 +110,18 @@ export default function PortalShell() {
   const navigate = useNavigate();
   const location = useLocation();
   const ready = useEnsureSeed();
-  const notifications = useQuery(api.studentPortal.notificationsList);
+  const notifications = useQuery(api.desk.notificationsList);
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   const today = TODAY;
 
   const unread = notifications?.unread ?? 0;
+  const role: Role =
+    user?.role === "teacher" || user?.role === "admin" ? user.role : "student";
+  const nav = navFor(role);
   const current =
-    NAV.find((n) => location.pathname.startsWith(n.to))?.label ?? "Dashboard";
+    nav.find((n) => location.pathname.startsWith(n.to))?.label ?? "Dashboard";
 
   const handleSearch = (event: FormEvent) => {
     event.preventDefault();
@@ -106,17 +143,22 @@ export default function PortalShell() {
     );
   }
 
-  if (user.role !== "student" || user.status === "inactive") {
+  const allowedRole =
+    user.role === "student" || user.role === "teacher" || user.role === "admin";
+  if (!allowedRole || user.status === "inactive") {
     return (
       <div className="flex min-h-screen items-center justify-center p-6">
         <div className="max-w-md border border-border bg-card p-6 text-center">
           <p className="label-caps text-primary">Access restricted</p>
           <h1 className="font-editorial mt-2 text-xl font-bold">
-            Student desk only in version 1
+            {user.status === "inactive"
+              ? "This account has been deactivated"
+              : "No desk is assigned to this account"}
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            This session is not an active student account. Faculty and office
-            desks open in version 2 of ClassCast.
+            {user.status === "inactive"
+              ? "Contact the Office of Academics to reactivate your portal account."
+              : "Ask the registry to allot your portal ID to a student, faculty or administration desk."}
           </p>
           <button
             type="button"
@@ -140,12 +182,12 @@ export default function PortalShell() {
               ClassCast
             </span>
             <span className="label-caps mt-1 block text-muted-foreground">
-              Student Desk
+              {DESK_LABEL[role]}
             </span>
           </NavLink>
         </div>
         <div className="flex-1 overflow-y-auto py-3">
-          <NavItems unread={unread} />
+          <NavItems items={nav} unread={unread} />
         </div>
         <div className="border-t border-border px-3 py-3">
           <p className="label-caps text-muted-foreground">Portal</p>
@@ -210,11 +252,11 @@ export default function PortalShell() {
               className="flex cursor-pointer items-center gap-2 border border-border px-2 py-1"
             >
               <span className="flex size-6 items-center justify-center bg-secondary text-[11px] font-semibold">
-                {initials(user.name ?? "Student")}
+                {initials(user.name ?? user.portalId ?? "ClassCast")}
               </span>
               <span className="hidden text-left sm:block">
                 <span className="block text-xs leading-tight font-medium">
-                  {user.name ?? "Student"}
+                  {user.name ?? user.portalId ?? "Account"}
                 </span>
                 <span className="label-caps block text-muted-foreground">
                   {user.portalId ?? ""}
@@ -234,7 +276,11 @@ export default function PortalShell() {
 
           {menuOpen && (
             <div className="border-t border-border bg-sidebar lg:hidden">
-              <NavItems unread={unread} onNavigate={() => setMenuOpen(false)} />
+              <NavItems
+                items={nav}
+                unread={unread}
+                onNavigate={() => setMenuOpen(false)}
+              />
             </div>
           )}
         </header>

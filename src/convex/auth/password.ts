@@ -113,9 +113,15 @@ export const classcastPassword: CredentialsProvider = ConvexCredentials({
     const valid = await verifyPassword(password, hash);
     if (!valid) return null;
 
-    // Version 1 ships the student desk only, and never lets a deactivated
-    // account start a session.
-    if (user.role !== "student") return null;
+    // All three desks authenticate here; each desk's functions enforce the
+    // role again server-side. Deactivated accounts never start a session.
+    if (
+      user.role !== "student" &&
+      user.role !== "teacher" &&
+      user.role !== "admin"
+    ) {
+      return null;
+    }
     if (user.status === "inactive") return null;
 
     return { userId: user.userId };

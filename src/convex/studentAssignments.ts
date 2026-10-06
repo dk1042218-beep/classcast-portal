@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { mutation, query, type QueryCtx } from "./_generated/server";
-import { DAY_MS, requireStudent } from "./lib";
+import { DAY_MS, requireStudent, validateUpload } from "./lib";
 
 const GRACE_MS = 2 * DAY_MS;
 
@@ -143,6 +143,11 @@ export const assignmentDetail = query({
             score: submission.score ?? null,
             feedback: submission.feedback ?? null,
             gradedAt: submission.gradedAt ?? null,
+            fileName: submission.fileName ?? null,
+            fileSize: submission.fileSize ?? null,
+            fileUrl: submission.objectKey
+              ? await ctx.storage.getUrl(submission.objectKey as Id<"_storage">)
+              : null,
           }
         : null,
       submittedCount: classSubmissions.length,
@@ -151,11 +156,23 @@ export const assignmentDetail = query({
   },
 });
 
+/** Server-issued upload URL for a submission attachment. */
+export const generateSubmissionUploadUrl = mutation({
+  args: {},
+  handler: async (ctx) => {
+    await requireStudent(ctx);
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
 /** Create or edit a submission while the deadline window is open. */
 export const submitAssignment = mutation({
   args: {
     activityId: v.id("activities"),
     answer: v.string(),
+    file: v.optional(
+      v.object({ fileName: v.string(), objectKey: v.string() }),
+    ),
   },
   handler: async (ctx, args) => {
     const student = await requireStudent(ctx);
@@ -166,6 +183,20 @@ export const submitAssignment = mutation({
     const answer = args.answer.trim();
     if (answer.length < 10) throw new Error("Answer is too short");
     if (answer.length > 8000) throw new Error("Answer is too long (8000 characters max)");
+
+    // Optional attachment: verify it exists in storage and passes the shared
+    // size/type policy before it is ever linked to the submission.
+    let file: { fileName: string; objectKey: string; fileSize: number } | undefined;
+    if (args.file) {
+      const meta = await ctx.db.system.get(args.file.objectKey as Id<"_storage">);
+      if (!meta) throw new Error("Uploaded file not found");
+      validateUpload(args.file.fileName, meta.size);
+      file = {
+        fileName: args.file.fileName,
+        objectKey: args.file.objectKey,
+        fileSize: meta.size,
+      };
+    }
 
     const now = Date.now();
     if (now > activity.dueAt + GRACE_MS) throw new Error("The deadline has passed");
@@ -186,7 +217,13 @@ export const submitAssignment = mutation({
     const isLate = now > activity.dueAt;
     let id: Id<"submissions">;
     if (existing) {
-      await ctx.db.patch(existing._id, { answer, updatedAt: now, isLate });
+      const patch: Partial<Doc<"submissions">> = { answer, updatedAt: now, isLate };
+      if (file) {
+        patch.fileName = file.fileName;
+        patch.objectKey = file.objectKey;
+        patch.fileSize = file.fileSize;
+      }
+      await ctx.db.patch(existing._id, patch);
       id = existing._id;
     } else {
       id = await ctx.db.insert("submissions", {
@@ -196,6 +233,9 @@ export const submitAssignment = mutation({
         submittedAt: now,
         updatedAt: now,
         isLate,
+        fileName: file?.fileName,
+        objectKey: file?.objectKey,
+        fileSize: file?.fileSize,
       });
       await ctx.db.insert("notifications", {
         userId: student._id,
